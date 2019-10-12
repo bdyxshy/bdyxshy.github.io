@@ -1,2 +1,3 @@
 # bdyxshy.github.io
-This is my website.
+- Welcome! 
+- please click there to [HOMEPAGE](https://bdyxshy.github.io/index.html)

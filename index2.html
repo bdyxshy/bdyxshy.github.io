@@ -4,29 +4,44 @@
     <meta charset="utf-8">
     <title>MOVIE PLAY —— Powered by godyu</title>
     <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
-    <meta name="Referer" content="http://live.youdao.com/livewap/liveMobile.html?courseId=40334&lesson=2449160&liveId=680fd742e4e7&staffFree=true&_now=1571204880277">
     <script src="https://cdn.staticfile.org/jquery/2.1.1/jquery.min.js"></script>
     <script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <style type="text/css">
+        #control {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(37, 81, 128, 0.1);
+            display: inline-block;
+            cursor: pointer;
+            visibility: visible;
+            margin-right: 20px;
+        }
+    </style>
 </head>
-<body style="background-color:black;">
+<body>
 
 <div style="text-align:center;">
-    <br>
-    <input type="text" placeholder="请输入MP4地址" id="link">
-    <button onclick="load()" class="btn btn-success btn-xs">加载</button>
-    &nbsp;&nbsp;&nbsp;&nbsp;
-    <button onclick="playPause()" class="btn btn-primary btn-xs">播放/暂停</button>
-    &nbsp;&nbsp;&nbsp;&nbsp;
-    <button onclick="makeBig()" class="btn btn-warning btn-xs">放大</button>
-    <button onclick="makeNormal()" class="btn btn-warning btn-xs">普通</button>
-    <button onclick="makeSmall()" class="btn btn-warning btn-xs">缩小</button>
-    &nbsp;&nbsp;&nbsp;&nbsp;
-    <!--<button onclick="getPlaySpeed()" class="btn btn-info btn-xs">当前播放速度</button>-->
-    <button onclick="setPlaySpeed(0.5)" class="btn btn-info btn-xs">0.5X</button>
-    <button onclick="setPlaySpeed(1)" class="btn btn-info btn-xs">1X</button>
-    <button onclick="setPlaySpeed(1.5)" class="btn btn-info btn-xs">1.5X</button>
-    <button onclick="setPlaySpeed(2)" class="btn btn-info btn-xs">2X</button>
-    <button onclick="setPlaySpeed(2.5)" class="btn btn-info btn-xs">2.5X</button>
+    <div id="control"></div>
+    <div id="menu" style="display: inline-block">
+        <br>
+        <input type="hidden" id="host" value="http://partner-temp.movie.vcinema.com.cn/">
+        <input type="text" placeholder="请输入MP4地址" id="link">
+        <button onclick="load()" class="btn btn-success btn-xs">加载</button>
+        &nbsp;&nbsp;&nbsp;&nbsp;
+        <button onclick="playPause()" class="btn btn-primary btn-xs">播放/暂停</button>
+        &nbsp;&nbsp;&nbsp;&nbsp;
+        <button onclick="makeBig()" class="btn btn-warning btn-xs">放大</button>
+        <button onclick="makeNormal()" class="btn btn-warning btn-xs">普通</button>
+        <button onclick="makeSmall()" class="btn btn-warning btn-xs">缩小</button>
+        &nbsp;&nbsp;&nbsp;&nbsp;
+        <!--<button onclick="getPlaySpeed()" class="btn btn-info btn-xs">当前播放速度</button>-->
+        <button onclick="setPlaySpeed(0.5)" class="btn btn-info btn-xs">0.5X</button>
+        <button onclick="setPlaySpeed(1)" class="btn btn-info btn-xs">1X</button>
+        <button onclick="setPlaySpeed(1.5)" class="btn btn-info btn-xs">1.5X</button>
+        <button onclick="setPlaySpeed(2)" class="btn btn-info btn-xs">2X</button>
+        <button onclick="setPlaySpeed(2.5)" class="btn btn-info btn-xs">2.5X</button>
+    </div>
     <div style="margin:10px"></div>
     <video id="video" width="800" autoplay controls>
         <source src=""
@@ -41,7 +56,7 @@
     var myVideo = document.getElementById("video");
 
     function load() {
-      $("#movie").attr("src",$("#link").val());
+      $("#movie").attr("src",$("#host").val()+$("#link").val());
       myVideo.load();
     }
     /*function getPlaySpeed() {
@@ -73,4 +88,12 @@
     function makeNormal() {
         myVideo.width = 800;
     }
+
+    $("#control").click(function () {
+        if ($("#menu").css("visibility") == "visible") {
+            $("#menu").css("visibility", "hidden");
+        } else {
+            $("#menu").css("visibility", "visible");
+        }
+    });
 </script>

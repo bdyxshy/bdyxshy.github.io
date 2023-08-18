@@ -19,4 +19,4 @@ hostname = *.imendon.com
 // body = $response.body.replace(/\"expiredTs":\d+/g, '\"expiredTs":4102415999')
 // $done({body});
 *************************************/
-alter("嘿嘿嘿");var youxiu ='{"code":1,"msg":"ok","data":{"isValid":1,"expiredTs":4102415999}}';$done({JSON.stringify(youxiu)});
+alter("嘿嘿嘿");

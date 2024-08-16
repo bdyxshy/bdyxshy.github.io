@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YAML to Java Code Generator</title>
+    <!-- 引入 Bulma CSS 框架 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
+    <style>
+        .textarea {
+            font-family: monospace;
+            min-height: 200px;
+        }
+        .code-container {
+            white-space: pre-wrap;
+            border: 1px solid #ddd;
+            padding: 15px;
+            background: #f8f9fa;
+            position: relative;
+        }
+        .copy-button {
+            top: 10px;
+            right: 10px;
+            background: #fff;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <section class="section">
+        <h1 class="title">YAML to Java Code Generator</h1>
+
+        <div class="field">
+            <label class="label">YAML Content</label>
+            <div class="control">
+                <textarea id="yaml-input" class="textarea" placeholder="Enter YAML content here..."></textarea>
+            </div>
+        </div>
+
+        <div class="field is-grouped">
+            <div class="control">
+                <button class="button is-primary" onclick="generateCode()">Generate Code</button>
+            </div>
+            <div class="control">
+                <button class="button is-info" onclick="loadDemo()">Load Demo</button>
+            </div>
+        </div>
+
+        <div class="field">
+            <div class="level">
+                <div class="level-left">
+                    <label class="label">Controller Methods</label>
+                </div>
+                <div class="level-right">
+                    <button class="button is-small is-light copy-button" data-clipboard-target="#controller-methods">Copy</button>
+                </div>
+            </div>
+            <pre id="controller-methods" class="code-container"></pre>
+        </div>
+
+        <div class="field">
+            <div class="level">
+                <div class="level-left">
+                    <label class="label">Service Methods</label>
+                </div>
+                <div class="level-right">
+                    <button class="button is-small is-light copy-button" data-clipboard-target="#service-methods">Copy</button>
+                </div>
+            </div>
+            <pre id="service-methods" class="code-container"></pre>
+        </div>
+    </section>
+</div>
+
+<!-- 引入 Clipboard.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.8/clipboard.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        new ClipboardJS('.copy-button');
+    });
+
+    const PAGE_PARAMETERS = {
+        'page_number': {
+            'name': 'page_number',
+            'in': 'query',
+            'description': '当前页数',
+            'type': 'integer',
+            'format': 'int32',
+            'required': true,
+            'minimum': 1,
+            'default': 1
+        },
+        'page_size': {
+            'name': 'page_size',
+            'in': 'query',
+            'description': '每页显示条数',
+            'type': 'integer',
+            'format': 'int32',
+            'required': true,
+            'minimum': 1,
+            'default': 10
+        }
+    };
+
+    const TYPE_MAPPING = {
+        'integer': 'Integer',
+        'string': 'String',
+        'file': 'MultipartFile',
+        'boolean': 'Boolean',
+        'array': 'List',
+        'object': 'Map',
+        'number': 'Double'
+    };
+
+    function resolveParamType(param_type) {
+        return TYPE_MAPPING[param_type] || 'Object';
+    }
+
+    function getJavaType(py_obj) {
+        if (typeof py_obj === 'number') {
+            return Number.isInteger(py_obj) ? 'Integer' : 'Double';
+        } else if (typeof py_obj === 'string') {
+            return 'String';
+        } else if (typeof py_obj === 'boolean') {
+            return 'Boolean';
+        } else if (Array.isArray(py_obj)) {
+            return 'List<Map<String, Object>>';
+        } else if (typeof py_obj === 'object') {
+            return 'Map<String, Object>';
+        } else {
+            return 'Object';
+        }
+    }
+
+    function getJavaCastMethod(java_type) {
+        const cast_methods = {
+            'String': 'getString',
+            'Integer': 'getInteger',
+            'Boolean': 'getBoolean',
+            'Double': 'getDouble',
+            'List<Map<String, Object>>': 'getJSONArray',
+            'Map<String, Object>': 'getJSONObject'
+        };
+        return cast_methods[java_type] || 'get';
+    }
+
+    function camelCase(s) {
+        return s.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+    }
+
+    function getServiceName(path) {
+        const parts = path.split('/');
+        if (parts.length > 1) {
+            return camelCase(parts[1]) + "ApiService";
+        }
+        return "defaultService";
+    }
+
+    function parseParameters(parameters) {
+        const parsed_params = {};
+        parameters.forEach(param => {
+            if ('$ref' in param) {
+                const ref_name = param['$ref'].split('/').pop();
+                if (ref_name in PAGE_PARAMETERS) {
+                    const param_info = PAGE_PARAMETERS[ref_name];
+                    parsed_params[param_info['name']] = param_info;
+                }
+            } else {
+                const param_in = param.in || 'query';
+                const param_type = param.type || 'string';
+                const param_name = param.name || '';
+
+                if (param_name && param_in && param_type) {
+                    if (param_in === 'body') {
+                        const schema = param.schema || {};
+                        const example = schema.example;
+                        if (example) {
+                            parsed_params['body'] = {
+                                example: JSON.parse(example),
+                                description: param.description || 'Request body'
+                            };
+                        }
+                    } else {
+                        parsed_params[param_name] = {
+                            'in': param_in,
+                            'type': param_type,
+                            'required': param.required || false,
+                            'description': param.description || ''
+                        };
+                    }
+                }
+            }
+        });
+        return parsed_params;
+    }
+
+    function generateControllerMethod(path, method, params) {
+        const method_name = camelCase(method.operationId);
+        const service_name = getServiceName(path);
+        const params_str = [];
+        const service_params = [];
+        let body_handling = "";
+        const body_params = params.body ? params.body.example : {};
+
+        for (const [name, info] of Object.entries(params)) {
+            if (name === 'body') {
+                const body_description = info.description || 'Request body';
+                params_str.push(
+                    `@ApiParam(value = "${body_description}", required = true) @Valid @RequestBody String body`
+                );
+            } else {
+                const param_type = resolveParamType(info.type);
+                const required_str = info.required ? 'required = true' : 'required = false';
+                const null_check = info.required ? '@NotNull ' : '';
+                const camel_case_name = camelCase(name);
+
+                if (info.in === 'header') {
+                    params_str.push(
+                        `${null_check}@ApiParam(value = "${info.description}", ${required_str}) @RequestHeader(value = "${name}", ${required_str}) ${param_type} ${camel_case_name}`
+                    );
+                } else if (info.in === 'path') {
+                    params_str.push(
+                        `${null_check}@ApiParam(value = "${info.description}", ${required_str}) @PathVariable(value = "${name}") ${param_type} ${camel_case_name}`
+                    );
+                } else {
+                    params_str.push(
+                        `${null_check}@ApiParam(value = "${info.description}", ${required_str}) @RequestParam(value = "${name}", ${required_str}) ${param_type} ${camel_case_name}`
+                    );
+                }
+
+                service_params.push(camel_case_name);
+            }
+        }
+
+        if (body_params && Object.keys(body_params).length > 0) {
+            body_handling = `
+                if (StringUtils.isBlank(body)) {
+                    return new ResponseEntity<>(OperateResult.paramError(), HttpStatus.BAD_REQUEST);
+                }
+                JSONObject jsonObject = JSON.parseObject(body);
+            `;
+            for (const [key, value] of Object.entries(body_params)) {
+                const java_type = getJavaType(value);
+                const cast_method = getJavaCastMethod(java_type);
+                const camel_case_key = camelCase(key);
+
+                if (java_type === 'List<Map<String, Object>>') {
+                    body_handling += `
+                        JSONArray ${camel_case_key}Array = jsonObject.${cast_method}("${key}");
+                        Type ${camel_case_key}Type = new TypeReference<List<Map<String, Object>>>() {};
+                        List<Map<String, Object>> ${camel_case_key} = JSONArray.parseObject(${camel_case_key}Array.toJSONString(), ${camel_case_key}Type);
+                    `;
+                } else if (java_type === 'Map<String, Object>') {
+                    body_handling += `
+                        JSONObject ${camel_case_key}Obj = jsonObject.${cast_method}("${key}");
+                        Map<String, Object> ${camel_case_key} = JSON.parseObject(${camel_case_key}Obj.toJSONString(), new TypeReference<Map<String, Object>>() {});
+                    `;
+                } else {
+                    body_handling += `
+                        ${java_type} ${camel_case_key} = jsonObject.${cast_method}("${key}");
+                    `;
+                }
+                service_params.push(camel_case_key);
+            }
+        }
+
+        const params_joined = params_str.join(', ');
+        const service_params_joined = service_params.join(', ');
+
+        return `
+            @Override
+            public ResponseEntity<OperateResult> ${method_name}(${params_joined}) {
+                ${body_handling}
+                return new ResponseEntity<>(${service_name}.${method_name}(${service_params_joined}), HttpStatus.OK);
+            }
+        `;
+    }
+
+    function generateServiceMethod(method, params) {
+        const method_name = camelCase(method.operationId);
+        const params_str = [];
+
+        for (const [name, info] of Object.entries(params)) {
+            if (name === 'body') {
+                const body_params = info.example;
+                for (const [k, v] of Object.entries(body_params)) {
+                    const java_type = getJavaType(v);
+                    params_str.push(`${java_type} ${camelCase(k)}`);
+                }
+            } else {
+                const param_type = resolveParamType(info.type);
+                params_str.push(`${param_type} ${camelCase(name)}`);
+            }
+        }
+
+        return `\n        OperateResult ${method_name}(${params_str.join(', ')});`;
+    }
+
+    function generateCode() {
+        const yamlInput = document.getElementById('yaml-input').value;
+        if (!yamlInput) {
+            alert('Please enter some YAML content.');
+            return;
+        }
+
+        let data;
+        try {
+            data = jsyaml.load(yamlInput);
+        } catch (e) {
+            alert('Invalid YAML content: ' + e.message);
+            return;
+        }
+
+        const controllerMethods = [];
+        const serviceMethods = [];
+
+        for (const [path, pathItem] of Object.entries(data.paths || {})) {
+            for (const [httpMethod, methodItem] of Object.entries(pathItem)) {
+                const params = parseParameters(methodItem.parameters || []);
+                if (methodItem.parameters.some(param => '$ref' in param)) {
+                    for (const pageParam of Object.values(PAGE_PARAMETERS)) {
+                        if (!(pageParam.name in params)) {
+                            params[pageParam.name] = pageParam;
+                        }
+                    }
+                }
+
+                controllerMethods.push(generateControllerMethod(path, methodItem, params));
+                serviceMethods.push(generateServiceMethod(methodItem, params));
+            }
+        }
+
+        document.getElementById('controller-methods').textContent = controllerMethods.join('\n');
+        document.getElementById('service-methods').textContent = serviceMethods.join('\n');
+    }
+
+    function loadDemo() {
+        const demoYaml = `
+paths:
+  /workflow_movie_collection/group:
+    post:
+      tags:
+        - workflow_movie_collection
+      summary: '新增合辑策划分组'
+      description: 'add_workflow_movie_collection_group'
+      operationId: 'addWorkflowMovieCollectionGroup'
+      parameters:
+        - in: header
+          name: user_id
+          type: integer
+          format: int32
+          description: 操作人
+          required: true
+        - in: body
+          name: body
+          description: '分组信息-JSON 字符串(group_type：1电影 2电视剧 必填, title：必填, description：非必填,  movie_top_id：group_type传2时必填, movie_ids：非必填, collection_key：必填,seasons: 电视剧必填)'
+          required: true
+          schema:
+            type: string
+            example: '{"title": "Group Title", "description": "Description of the group", "group_type": 1, "movie_top_id": 123, "movie_ids": "1,2,3", "collection_key": "collection_key","seasons": [{"movie_season_id": "123", "title": "title", "description": "description"}]}'
+      responses:
+        200:
+          schema:
+            $ref: '#/definitions/operate_result'
+          description: OK
+        500:
+          schema:
+            $ref: '#/definitions/operate_result'
+          description: 'internal error'
+  /tv_box_desk/card_conf:
+    post:
+      tags:
+        - tv_box_desk
+      summary: '新增电视盒桌面卡片配置'
+      description: 'add_card_conf'
+      operationId: 'addCardConf'
+      parameters:
+        - in: query
+          name: title
+          type: string
+          required: true
+          description: '标题'
+        - in: query
+          name: background_img
+          type: string
+          required: true
+          description: '背景图片地址'
+        - in: query
+          name: jump_type
+          type: string
+          required: true
+          description: '跳转类型：SCHEMA本应用；PACKAGE_NAME其他应用'
+        - in: query
+          name: jump_value
+          type: string
+          required: true
+          description: '跳转值'
+        - in: query
+          name: jump_page
+          type: string
+          required: false
+          description: '跳转页面（跳转类型为 PACKAGE_NAME 时填写）'
+      responses:
+        200:
+          schema:
+            $ref: '#/definitions/operate_result'
+          description: OK
+        500:
+          schema:
+            $ref: '#/definitions/operate_result'
+          description: 'internal error'
+  /upgrade_package/{upgrade_type}/pull:
+    post:
+      tags:
+        - "upgrade_package"
+      summary: "Get APK Url"
+      description: "拉取 APK 升级路径"
+      operationId: "getAPKUrl"
+      parameters:
+        - $ref: '#/parameters/apk_param'
+        - in: path
+          name: upgrade_type
+          description: "升级类型：1，内测组用户升级；2，普通升级；3，ATV个人中心升级；4，官网升级；"
+          required: true
+          type: integer
+        - in: query
+          name: protected
+          description: "是否加固"
+          required: false
+          default: false
+          type: boolean
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/operate_result'
+        500:
+          description: "internal error"
+        `;
+        document.getElementById('yaml-input').value = demoYaml.trim();
+    }
+</script>
+</body>
+</html>

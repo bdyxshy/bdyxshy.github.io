@@ -4,4 +4,4 @@
 - 
 - please click there to [YAML2JAVA](https://bdyxshy.github.io/yaml2java.html)
 -
-- please click there to [web chat](https://bdyxshy.github.io/index_gpt_v5.html)
+- please click there to [web chat](https://bdyxshy.github.io/index_gpt.html)

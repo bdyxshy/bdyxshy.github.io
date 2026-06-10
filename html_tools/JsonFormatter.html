@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON格式化提取工具</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --accent-color: #0f766e;
+            --bg-color: #f5f7fb;
+            --card-bg: #ffffff;
+            --border-color: #e5e7eb;
+            --text-main: #27272a;
+            --text-muted: #71717a;
+            --error-color: #b91c1c;
+            --error-bg: #fee2e2;
+            --surface-soft: #f8fafc;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 30px 20px;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+        }
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 28px;
+            border: 1px solid rgba(228, 228, 231, 0.92);
+            border-radius: 8px;
+            box-shadow: 0 20px 45px -30px rgba(15, 23, 42, 0.32);
+        }
+        .header-area {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 25px;
+            position: relative;
+        }
+        h2 {
+            margin: 0;
+            color: var(--text-main);
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: 0;
+        }
+        .icon-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: var(--text-muted);
+            padding: 8px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        .icon-btn:hover {
+            background: #f1f5f9;
+            color: var(--primary-color);
+        }
+        .info-btn {
+            margin-left: 10px;
+        }
+        .json-workspace {
+            display: grid;
+            grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+            gap: 18px;
+            align-items: stretch;
+            margin-bottom: 22px;
+        }
+        .input-area,
+        .result-area,
+        .extract-area {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 22px;
+        }
+        .json-workspace .input-area,
+        .json-workspace .result-area {
+            margin-bottom: 0;
+        }
+        .label-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 8px;
+        }
+        label {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+        .status-text {
+            min-height: 18px;
+            font-size: 13px;
+            color: var(--text-muted);
+            text-align: right;
+        }
+        .status-text.error {
+            color: var(--error-color);
+        }
+        .status-text.success {
+            color: #15803d;
+        }
+        textarea,
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            box-sizing: border-box;
+            font-family: "Fira Code", monospace;
+            background-color: var(--surface-soft);
+            transition: border-color 0.3s;
+        }
+        textarea {
+            min-height: 420px;
+            resize: vertical;
+            line-height: 1.5;
+        }
+        input {
+            height: 46px;
+        }
+        textarea:focus,
+        input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            background-color: #fff;
+        }
+        .formatted-wrapper,
+        .extract-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background-color: var(--card-bg);
+            box-shadow: 0 10px 22px -16px rgba(15, 23, 42, 0.55);
+            z-index: 2;
+        }
+        .copy-btn:hover {
+            background-color: #f8fafc;
+            color: var(--primary-color);
+        }
+        #formattedBox {
+            width: 100%;
+            min-height: 420px;
+            max-height: 520px;
+            padding: 20px 56px 20px 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--surface-soft);
+            font-size: 14px;
+            font-family: "Fira Code", monospace;
+            white-space: pre-wrap;
+            overflow: auto;
+            box-sizing: border-box;
+            line-height: 1.6;
+            color: var(--text-main);
+        }
+        #formattedBox.placeholder,
+        #extractResult::placeholder,
+        #jsonInput::placeholder,
+        #extractRule::placeholder {
+            color: #94a3b8;
+            font-style: italic;
+        }
+        #formattedBox.error {
+            color: var(--error-color);
+            background-color: var(--error-bg);
+            border-color: #fecaca;
+        }
+        .extract-control {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        #extractResult {
+            min-height: 150px;
+            padding-right: 56px;
+        }
+        #toast {
+            visibility: hidden;
+            min-width: 200px;
+            background-color: rgba(30, 41, 59, 0.9);
+            color: #fff;
+            text-align: center;
+            border-radius: 8px;
+            padding: 12px 20px;
+            position: fixed;
+            z-index: 999;
+            left: 50%;
+            bottom: 40px;
+            transform: translateX(-50%) translateY(20px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        }
+        #toast.show {
+            visibility: visible;
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background-color: #fff;
+            margin: 8% auto;
+            padding: 30px 40px;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 620px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+        .close-btn:hover {
+            background: #f1f5f9;
+            color: var(--text-main);
+        }
+        .modal-content ul {
+            line-height: 2;
+            padding-left: 20px;
+            color: #475569;
+        }
+        .modal-content li {
+            margin-bottom: 10px;
+        }
+        code {
+            background: #f1f5f9;
+            border-radius: 6px;
+            padding: 2px 6px;
+            color: #3730a3;
+            font-family: "Fira Code", monospace;
+        }
+        @media (max-width: 720px) {
+            body {
+                padding: 18px 12px;
+            }
+            .container {
+                padding: 20px;
+            }
+            .json-workspace {
+                display: block;
+            }
+            .json-workspace .input-area,
+            .json-workspace .result-area {
+                margin-bottom: 22px;
+            }
+            textarea,
+            #formattedBox {
+                min-height: 220px;
+            }
+            .label-row {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 6px;
+            }
+            .status-text {
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-area">
+        <h2>JSON格式化提取工具</h2>
+        <button class="icon-btn info-btn" onclick="showRules()" title="运行规则说明">
+            <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+        </button>
+    </div>
+
+    <div class="json-workspace">
+        <div class="input-area">
+            <div class="label-row">
+                <label for="jsonInput">JSON 原始数据</label>
+                <span id="parseStatus" class="status-text">粘贴 JSON 后会自动格式化</span>
+            </div>
+            <textarea id="jsonInput" placeholder="在此粘贴 JSON 数据..."></textarea>
+        </div>
+
+        <div class="result-area">
+            <label>格式化预览</label>
+            <div class="formatted-wrapper">
+                <button class="icon-btn copy-btn" onclick="copyFormatted()" title="复制格式化 JSON">
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                </button>
+                <div id="formattedBox" class="placeholder">格式化后的 JSON 会显示在这里...</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="extract-area">
+        <div class="label-row">
+            <label for="extractRule">数据提取规则</label>
+            <span id="extractStatus" class="status-text">示例：key 或 data.port[].key</span>
+        </div>
+        <div class="extract-control">
+            <input id="extractRule" type="text" placeholder="输入 key 或路径，例如：key / data.port[].key">
+        </div>
+        <label for="extractResult">提取结果</label>
+        <div class="extract-wrapper">
+            <button class="icon-btn copy-btn" onclick="copyExtractResult()" title="复制提取结果">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+            </button>
+            <textarea id="extractResult" readonly placeholder="匹配到的数据会按每行一个显示在这里..."></textarea>
+        </div>
+    </div>
+</div>
+
+<div id="toast">✅ 提示内容</div>
+
+<div id="ruleModal" class="modal">
+    <div class="modal-content">
+        <svg class="close-btn" onclick="closeRules()" viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+        <h3 style="margin-top: 0; color: var(--text-main);">运行规则说明</h3>
+        <ul>
+            <li><strong>自动格式化：</strong>粘贴或修改 JSON 后，工具会自动解析并展示缩进后的 JSON。</li>
+            <li><strong>普通 key 提取：</strong>输入 <code>key</code> 会递归扫描整个 JSON，提取所有字段名为 key 的值。</li>
+            <li><strong>路径提取：</strong>输入 <code>data.port[].key</code> 会进入 data.port 数组，并提取每个元素里的 key。</li>
+            <li><strong>结果复制：</strong>格式化预览和提取结果右上角都有复制图标，提取结果会保持每行一个数据。</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+    let parsedJson = null;
+    let formattedJsonText = "";
+    let lastValidJsonText = "";
+
+    const jsonInput = document.getElementById('jsonInput');
+    const extractRule = document.getElementById('extractRule');
+    const extractResult = document.getElementById('extractResult');
+    const formattedBox = document.getElementById('formattedBox');
+    const parseStatus = document.getElementById('parseStatus');
+    const extractStatus = document.getElementById('extractStatus');
+
+    jsonInput.addEventListener('input', handleJsonInput);
+    extractRule.addEventListener('input', runExtraction);
+
+    function handleJsonInput() {
+        const rawText = jsonInput.value.trim();
+
+        if (!rawText) {
+            parsedJson = null;
+            formattedJsonText = "";
+            lastValidJsonText = "";
+            formattedBox.textContent = "格式化后的 JSON 会显示在这里...";
+            formattedBox.className = "placeholder";
+            parseStatus.textContent = "粘贴 JSON 后会自动格式化";
+            parseStatus.className = "status-text";
+            extractResult.value = "";
+            extractStatus.textContent = "示例：key 或 data.port[].key";
+            extractStatus.className = "status-text";
+            return;
+        }
+
+        try {
+            parsedJson = JSON.parse(rawText);
+            formattedJsonText = JSON.stringify(parsedJson, null, 4);
+            lastValidJsonText = rawText;
+            formattedBox.textContent = formattedJsonText;
+            formattedBox.className = "";
+            parseStatus.textContent = "JSON 解析成功";
+            parseStatus.className = "status-text success";
+            runExtraction();
+        } catch (error) {
+            parsedJson = null;
+            formattedBox.textContent = "JSON 解析失败：" + error.message;
+            formattedBox.className = "error";
+            formattedJsonText = "";
+            parseStatus.textContent = "JSON 解析失败，请检查语法";
+            parseStatus.className = "status-text error";
+            showToast("❌ JSON 解析失败");
+        }
+    }
+
+    function runExtraction() {
+        const rule = extractRule.value.trim();
+
+        if (!rule) {
+            extractResult.value = "";
+            extractStatus.textContent = "示例：key 或 data.port[].key";
+            extractStatus.className = "status-text";
+            return;
+        }
+
+        if (!parsedJson || !lastValidJsonText) {
+            extractStatus.textContent = "请先输入有效 JSON";
+            extractStatus.className = "status-text error";
+            return;
+        }
+
+        const values = isPathRule(rule)
+            ? extractByPath(parsedJson, parsePath(rule))
+            : extractByKey(parsedJson, rule);
+
+        if (values.length === 0) {
+            extractResult.value = "";
+            extractResult.placeholder = "未提取到匹配数据";
+            extractStatus.textContent = "未提取到匹配数据";
+            extractStatus.className = "status-text";
+            return;
+        }
+
+        extractResult.value = values.map(formatExtractValue).join("\n");
+        extractStatus.textContent = "已提取 " + values.length + " 条数据";
+        extractStatus.className = "status-text success";
+    }
+
+    function isPathRule(rule) {
+        return rule.includes('.') || rule.includes('[]');
+    }
+
+    function extractByKey(value, key) {
+        const results = [];
+
+        function visit(current) {
+            if (Array.isArray(current)) {
+                current.forEach(visit);
+                return;
+            }
+
+            if (current && typeof current === 'object') {
+                Object.keys(current).forEach(function(currentKey) {
+                    if (currentKey === key) {
+                        results.push(current[currentKey]);
+                    }
+                    visit(current[currentKey]);
+                });
+            }
+        }
+
+        visit(value);
+        return results;
+    }
+
+    function parsePath(pathText) {
+        const tokens = [];
+        const parts = pathText.split('.').filter(Boolean);
+
+        parts.forEach(function(part) {
+            const matches = part.match(/[^\[\]]+|\[\]/g) || [];
+            matches.forEach(function(match) {
+                if (match === '[]') {
+                    tokens.push({ type: 'array' });
+                } else {
+                    tokens.push({ type: 'property', key: match });
+                }
+            });
+        });
+
+        return tokens;
+    }
+
+    function extractByPath(value, tokens) {
+        function walk(current, index) {
+            if (index >= tokens.length) {
+                return [current];
+            }
+
+            const token = tokens[index];
+
+            if (token.type === 'array') {
+                if (!Array.isArray(current)) {
+                    return [];
+                }
+                return current.flatMap(function(item) {
+                    return walk(item, index + 1);
+                });
+            }
+
+            if (current && typeof current === 'object' && Object.prototype.hasOwnProperty.call(current, token.key)) {
+                return walk(current[token.key], index + 1);
+            }
+
+            return [];
+        }
+
+        return walk(value, 0);
+    }
+
+    function formatExtractValue(value) {
+        if (value === null) {
+            return "null";
+        }
+
+        if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+            return String(value);
+        }
+
+        return JSON.stringify(value);
+    }
+
+    function copyFormatted() {
+        if (!formattedJsonText.trim()) {
+            showToast("⚠️ 没有可复制的格式化 JSON");
+            return;
+        }
+
+        copyText(formattedJsonText, "✅ 格式化 JSON 已复制到剪贴板！");
+    }
+
+    function copyExtractResult() {
+        const textToCopy = extractResult.value;
+
+        if (!textToCopy.trim()) {
+            showToast("⚠️ 没有可复制的提取结果");
+            return;
+        }
+
+        copyText(textToCopy, "✅ 提取结果已复制到剪贴板！");
+    }
+
+    function copyText(text, successMessage) {
+        navigator.clipboard.writeText(text).then(function() {
+            showToast(successMessage);
+        }).catch(function(error) {
+            console.error('复制失败:', error);
+            showToast("❌ 复制失败，请手动框选复制");
+        });
+    }
+
+    function showToast(message) {
+        const toast = document.getElementById("toast");
+        toast.innerText = message;
+        toast.className = "show";
+        setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
+    }
+
+    function showRules() {
+        document.getElementById('ruleModal').style.display = 'block';
+    }
+
+    function closeRules() {
+        document.getElementById('ruleModal').style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        const modal = document.getElementById('ruleModal');
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文本合并工具</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --accent-color: #0f766e;
+            --bg-color: #f5f7fb;
+            --card-bg: #ffffff;
+            --border-color: #e5e7eb;
+            --text-main: #27272a;
+            --text-muted: #71717a;
+            --surface-soft: #f8fafc;
+            --success-color: #15803d;
+            --error-color: #b91c1c;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 30px 20px;
+            background: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 28px;
+            border: 1px solid rgba(228, 228, 231, 0.92);
+            border-radius: 8px;
+            background: var(--card-bg);
+            box-shadow: 0 20px 45px -30px rgba(15, 23, 42, 0.32);
+        }
+
+        .header-area {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 25px;
+        }
+
+        h2 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: 0;
+        }
+
+        .icon-btn {
+            width: 38px;
+            height: 38px;
+            padding: 0;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .icon-btn:hover {
+            background: #f1f5f9;
+            color: var(--primary-color);
+        }
+
+        .icon-btn:focus-visible,
+        .execute-btn:focus-visible,
+        .secondary-btn:focus-visible,
+        .toggle-control input:focus-visible + .toggle-track {
+            outline: 3px solid rgba(37, 99, 235, 0.2);
+            outline-offset: 2px;
+        }
+
+        .info-btn { margin-left: 8px; }
+
+        .input-area { margin-bottom: 18px; }
+
+        .label-row,
+        .result-label-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            margin-bottom: 8px;
+        }
+
+        label,
+        .field-label,
+        .option-label {
+            color: var(--text-muted);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        textarea,
+        input[type="text"] {
+            width: 100%;
+            padding: 14px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--surface-soft);
+            color: var(--text-main);
+            font-family: "Fira Code", Consolas, monospace;
+            font-size: 14px;
+            line-height: 1.55;
+            transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        textarea:focus,
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+        }
+
+        textarea::placeholder,
+        input::placeholder {
+            color: #94a3b8;
+        }
+
+        #sourceData {
+            min-height: 240px;
+            resize: vertical;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px 18px;
+            margin-bottom: 18px;
+        }
+
+        .field-group { min-width: 0; }
+        .field-group > label { display: block; margin-bottom: 8px; }
+        .field-group input { height: 46px; }
+
+        .settings-row {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 24px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+
+        .toggle-control {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            min-height: 40px;
+            color: #475569;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .toggle-control input {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .toggle-track {
+            position: relative;
+            width: 42px;
+            height: 24px;
+            border-radius: 999px;
+            background: #cbd5e1;
+            flex: 0 0 auto;
+            transition: background 0.2s ease;
+        }
+
+        .toggle-track::after {
+            content: "";
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 2px 5px rgba(15, 23, 42, 0.24);
+            transition: transform 0.2s ease;
+        }
+
+        .toggle-control input:checked + .toggle-track { background: var(--primary-color); }
+        .toggle-control input:checked + .toggle-track::after { transform: translateX(18px); }
+
+        .status-message {
+            min-height: 42px;
+            margin-bottom: 18px;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-left: 4px solid #cbd5e1;
+            border-radius: 8px;
+            background: var(--surface-soft);
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .status-message.success {
+            border-left-color: #22c55e;
+            background: #f0fdf4;
+            color: var(--success-color);
+        }
+
+        .status-message.error {
+            border-left-color: #ef4444;
+            background: #fef2f2;
+            color: var(--error-color);
+        }
+
+        .action-area {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 22px;
+            flex-wrap: wrap;
+        }
+
+        .execute-btn,
+        .secondary-btn {
+            min-height: 44px;
+            padding: 10px 22px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+        }
+
+        .execute-btn {
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            color: #fff;
+            box-shadow: 0 12px 24px -18px rgba(37, 99, 235, 0.8);
+        }
+
+        .execute-btn:hover {
+            background: linear-gradient(135deg, var(--primary-hover), #115e59);
+            transform: translateY(-1px);
+            box-shadow: 0 16px 30px -20px rgba(37, 99, 235, 0.9);
+        }
+
+        .secondary-btn { background: #eef2f7; color: #475569; }
+        .secondary-btn:hover { background: #e2e8f0; color: #1f2937; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 22px;
+        }
+
+        .stat-card {
+            min-width: 0;
+            padding: 14px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--surface-soft);
+        }
+
+        .stat-value {
+            display: block;
+            color: var(--text-main);
+            font-size: 24px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            line-height: 1.2;
+        }
+
+        .stat-label {
+            display: block;
+            margin-top: 4px;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .result-area { min-width: 0; }
+
+        .result-count {
+            color: #94a3b8;
+            font-size: 13px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .result-wrapper { position: relative; min-width: 0; }
+
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 2;
+            border: 1px solid var(--border-color);
+            background: rgba(255, 255, 255, 0.96);
+            box-shadow: 0 8px 18px -14px rgba(15, 23, 42, 0.55);
+        }
+
+        #resultOutput {
+            min-height: 180px;
+            max-height: 420px;
+            padding: 15px 54px 15px 15px;
+            resize: vertical;
+            white-space: pre;
+            overflow: auto;
+        }
+
+        #toast {
+            visibility: hidden;
+            min-width: 200px;
+            max-width: min(460px, calc(100vw - 32px));
+            padding: 12px 20px;
+            position: fixed;
+            z-index: 999;
+            left: 50%;
+            bottom: 40px;
+            transform: translateX(-50%) translateY(20px);
+            opacity: 0;
+            border-radius: 8px;
+            background: rgba(30, 41, 59, 0.94);
+            color: #fff;
+            text-align: center;
+            box-shadow: 0 10px 20px -8px rgba(15, 23, 42, 0.5);
+            transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s ease;
+        }
+
+        #toast.show {
+            visibility: visible;
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            inset: 0;
+            padding: 24px;
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(4px);
+            align-items: flex-start;
+            justify-content: center;
+            overflow-y: auto;
+        }
+
+        .modal.open { display: flex; }
+
+        .modal-content {
+            width: min(620px, 100%);
+            margin-top: 7vh;
+            padding: 30px 40px;
+            position: relative;
+            border-radius: 8px;
+            background: #fff;
+            box-shadow: 0 24px 50px -20px rgba(15, 23, 42, 0.45);
+        }
+
+        .close-btn { position: absolute; top: 14px; right: 14px; }
+
+        .modal-content h3 {
+            margin: 0 42px 16px 0;
+            font-size: 19px;
+        }
+
+        .modal-content ul {
+            margin: 0;
+            padding-left: 20px;
+            color: #475569;
+            line-height: 1.8;
+        }
+
+        .modal-content li + li { margin-top: 8px; }
+
+        code {
+            padding: 2px 6px;
+            border-radius: 6px;
+            background: #f1f5f9;
+            color: #3730a3;
+            font-family: "Fira Code", Consolas, monospace;
+        }
+
+        @media (max-width: 900px) {
+            .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+
+        @media (max-width: 760px) {
+            body { padding: 18px 12px; }
+            .container { padding: 20px; }
+            .config-grid { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            #sourceData { min-height: 190px; }
+            .modal { padding: 16px; }
+            .modal-content { margin-top: 8vh; padding: 26px 24px; }
+        }
+    </style>
+</head>
+<body>
+
+<main class="container">
+    <div class="header-area">
+        <h2>文本合并工具</h2>
+        <button type="button" class="icon-btn info-btn" id="rulesButton" title="运行规则说明" aria-label="查看运行规则说明">
+            <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+        </button>
+    </div>
+
+    <section class="input-area">
+        <div class="label-row">
+            <label for="sourceData">原始数据</label>
+        </div>
+        <textarea id="sourceData" spellcheck="false" placeholder="每行一条数据，例如：&#10;114514&#10;129530&#10;131313"></textarea>
+    </section>
+
+    <section class="config-grid" aria-label="合并配置">
+        <div class="field-group">
+            <label for="inputDelimiter">输入分隔符（留空按换行）</label>
+            <input id="inputDelimiter" type="text" spellcheck="false" autocomplete="off" placeholder="例如：,、|、\t 或多字符分隔符">
+        </div>
+        <div class="field-group">
+            <label for="outputDelimiter">输出连接符</label>
+            <input id="outputDelimiter" type="text" value="," spellcheck="false" autocomplete="off" placeholder="默认：,">
+        </div>
+        <div class="field-group">
+            <label for="leftWrapper">左包裹符</label>
+            <input id="leftWrapper" type="text" value="&quot;" spellcheck="false" autocomplete="off" placeholder="可留空">
+        </div>
+        <div class="field-group">
+            <label for="rightWrapper">右包裹符</label>
+            <input id="rightWrapper" type="text" value="&quot;" spellcheck="false" autocomplete="off" placeholder="可留空">
+        </div>
+    </section>
+
+    <section class="settings-row" aria-label="处理选项">
+        <label class="toggle-control" for="deduplicate">
+            <input id="deduplicate" type="checkbox">
+            <span class="toggle-track" aria-hidden="true"></span>
+            <span>去重</span>
+        </label>
+        <label class="toggle-control" for="caseSensitive">
+            <input id="caseSensitive" type="checkbox" checked>
+            <span class="toggle-track" aria-hidden="true"></span>
+            <span>去重区分大小写</span>
+        </label>
+    </section>
+
+    <div id="statusMessage" class="status-message" role="status" aria-live="polite">等待合并</div>
+
+    <div class="action-area">
+        <button type="button" class="execute-btn" id="mergeButton">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M4 7h6"></path>
+                <path d="M4 12h6"></path>
+                <path d="M4 17h6"></path>
+                <path d="M14 7h6"></path>
+                <path d="M14 12h6"></path>
+                <path d="M14 17h6"></path>
+            </svg>
+            <span>合并成一条</span>
+        </button>
+        <button type="button" class="secondary-btn" id="clearButton">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 6h18"></path>
+                <path d="M8 6V4h8v2"></path>
+                <path d="M19 6l-1 14H6L5 6"></path>
+                <path d="M10 11v5"></path>
+                <path d="M14 11v5"></path>
+            </svg>
+            <span>清空</span>
+        </button>
+    </div>
+
+    <section class="stats-grid" aria-label="合并统计">
+        <div class="stat-card">
+            <span class="stat-value" id="validCount">0</span>
+            <span class="stat-label">有效数据</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value" id="outputCount">0</span>
+            <span class="stat-label">输出数据</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value" id="duplicateCount">0</span>
+            <span class="stat-label">移除重复</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value" id="characterCount">0</span>
+            <span class="stat-label">结果字符数</span>
+        </div>
+    </section>
+
+    <section class="result-area">
+        <div class="result-label-row">
+            <label for="resultOutput">合并结果</label>
+            <span class="result-count" id="resultCount">0 条</span>
+        </div>
+        <div class="result-wrapper">
+            <button type="button" class="icon-btn copy-btn" id="copyButton" title="复制合并结果" aria-label="复制合并结果">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+            </button>
+            <textarea id="resultOutput" readonly wrap="off" spellcheck="false" placeholder="合并后的结果会显示在这里"></textarea>
+        </div>
+    </section>
+</main>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<div id="ruleModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="ruleModalTitle">
+    <div class="modal-content">
+        <button type="button" class="icon-btn close-btn" id="closeRulesButton" title="关闭" aria-label="关闭运行规则说明">
+            <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+        <h3 id="ruleModalTitle">运行规则说明</h3>
+        <ul>
+            <li><strong>输入分割：</strong>分隔符留空时按换行读取；支持普通字符串以及 <code>\n</code>、<code>\r</code>、<code>\t</code>、<code>\\</code>。输入按纯文本直接切分，不解析引号。</li>
+            <li><strong>数据清洗：</strong>自动去除每条数据首尾空白并忽略空项，默认保留重复项和原始顺序。</li>
+            <li><strong>包裹与连接：</strong>左右包裹符默认都是英文双引号，输出连接符默认是英文逗号；三项都支持自定义字符串和转义。</li>
+            <li><strong>去重规则：</strong>开启去重后默认区分大小写，关闭大小写开关后会将 <code>ABC</code> 和 <code>abc</code> 视为重复。</li>
+            <li><strong>特殊字符：</strong>数据中的引号和包裹符会原样保留，不会自动转义。</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+    const sourceData = document.getElementById('sourceData');
+    const inputDelimiter = document.getElementById('inputDelimiter');
+    const outputDelimiter = document.getElementById('outputDelimiter');
+    const leftWrapper = document.getElementById('leftWrapper');
+    const rightWrapper = document.getElementById('rightWrapper');
+    const deduplicate = document.getElementById('deduplicate');
+    const caseSensitive = document.getElementById('caseSensitive');
+    const resultOutput = document.getElementById('resultOutput');
+    const statusMessage = document.getElementById('statusMessage');
+    const ruleModal = document.getElementById('ruleModal');
+    let hasResult = false;
+    let toastTimer = null;
+
+    document.getElementById('mergeButton').addEventListener('click', mergeText);
+    document.getElementById('clearButton').addEventListener('click', clearAll);
+    document.getElementById('copyButton').addEventListener('click', copyResult);
+    document.getElementById('rulesButton').addEventListener('click', showRules);
+    document.getElementById('closeRulesButton').addEventListener('click', closeRules);
+
+    [sourceData, inputDelimiter, outputDelimiter, leftWrapper, rightWrapper, deduplicate, caseSensitive].forEach(function(control) {
+        control.addEventListener('input', markInputChanged);
+        control.addEventListener('change', markInputChanged);
+    });
+
+    document.addEventListener('keydown', function(event) {
+        if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+            event.preventDefault();
+            mergeText();
+        }
+
+        if (event.key === 'Escape' && ruleModal.classList.contains('open')) {
+            closeRules();
+        }
+    });
+
+    ruleModal.addEventListener('click', function(event) {
+        if (event.target === ruleModal) {
+            closeRules();
+        }
+    });
+
+    function mergeText() {
+        const rawText = sourceData.value;
+
+        if (!rawText.trim()) {
+            showValidationError('请输入需要合并的原始数据');
+            sourceData.focus();
+            return;
+        }
+
+        const delimiter = decodeEscapes(inputDelimiter.value);
+        const items = rawText
+            .split(delimiter || '\n')
+            .map(function(item) { return item.trim(); })
+            .filter(function(item) { return item.length > 0; });
+
+        if (items.length === 0) {
+            showValidationError('分割后没有可合并的有效数据');
+            return;
+        }
+
+        const outputItems = deduplicateItems(items);
+        const joiner = decodeEscapes(outputDelimiter.value);
+        const left = decodeEscapes(leftWrapper.value);
+        const right = decodeEscapes(rightWrapper.value);
+        const result = outputItems.map(function(item) {
+            return left + item + right;
+        }).join(joiner);
+        const removedCount = items.length - outputItems.length;
+
+        resultOutput.value = result;
+        updateStats(items.length, outputItems.length, removedCount, result.length);
+        hasResult = true;
+        setStatus('合并完成，共输出 ' + outputItems.length + ' 条数据', 'success');
+    }
+
+    function deduplicateItems(items) {
+        if (!deduplicate.checked) {
+            return items.slice();
+        }
+
+        const seen = new Set();
+        const output = [];
+
+        items.forEach(function(item) {
+            const key = caseSensitive.checked ? item : item.toLocaleLowerCase();
+            if (seen.has(key)) {
+                return;
+            }
+            seen.add(key);
+            output.push(item);
+        });
+
+        return output;
+    }
+
+    function decodeEscapes(text) {
+        if (text === '') {
+            return '';
+        }
+
+        const replacements = {
+            n: '\n',
+            r: '\r',
+            t: '\t',
+            '\\': '\\'
+        };
+        let decoded = '';
+
+        for (let index = 0; index < text.length; index++) {
+            const current = text[index];
+
+            if (current !== '\\' || index === text.length - 1) {
+                decoded += current;
+                continue;
+            }
+
+            const next = text[index + 1];
+            if (Object.prototype.hasOwnProperty.call(replacements, next)) {
+                decoded += replacements[next];
+                index++;
+            } else {
+                decoded += current;
+            }
+        }
+
+        return decoded;
+    }
+
+    function updateStats(valid, output, removed, characters) {
+        document.getElementById('validCount').textContent = String(valid);
+        document.getElementById('outputCount').textContent = String(output);
+        document.getElementById('duplicateCount').textContent = String(removed);
+        document.getElementById('characterCount').textContent = String(characters);
+        document.getElementById('resultCount').textContent = output + ' 条';
+    }
+
+    function resetResults() {
+        resultOutput.value = '';
+        updateStats(0, 0, 0, 0);
+        hasResult = false;
+    }
+
+    function showValidationError(message) {
+        resetResults();
+        setStatus(message, 'error');
+        showToast(message);
+    }
+
+    function markInputChanged() {
+        if (!hasResult) {
+            return;
+        }
+
+        resetResults();
+        setStatus('输入或规则已变更，请重新执行合并', '');
+    }
+
+    function clearAll() {
+        sourceData.value = '';
+        inputDelimiter.value = '';
+        outputDelimiter.value = ',';
+        leftWrapper.value = '"';
+        rightWrapper.value = '"';
+        deduplicate.checked = false;
+        caseSensitive.checked = true;
+        resetResults();
+        setStatus('已清空，等待合并', '');
+        sourceData.focus();
+    }
+
+    async function copyResult() {
+        if (!resultOutput.value) {
+            showToast('合并结果为空，无需复制');
+            return;
+        }
+
+        try {
+            if (!navigator.clipboard || !window.isSecureContext) {
+                throw new Error('Clipboard API unavailable');
+            }
+            await navigator.clipboard.writeText(resultOutput.value);
+        } catch (error) {
+            try {
+                fallbackCopyText(resultOutput.value);
+            } catch (fallbackError) {
+                console.error('复制失败:', error, fallbackError);
+                showToast('复制失败，请手动框选复制');
+                return;
+            }
+        }
+
+        showToast('合并结果已复制到剪贴板');
+    }
+
+    function fallbackCopyText(text) {
+        const temporaryTextarea = document.createElement('textarea');
+        temporaryTextarea.value = text;
+        temporaryTextarea.setAttribute('readonly', '');
+        temporaryTextarea.style.position = 'fixed';
+        temporaryTextarea.style.left = '-9999px';
+        temporaryTextarea.style.opacity = '0';
+        document.body.appendChild(temporaryTextarea);
+        temporaryTextarea.select();
+        temporaryTextarea.setSelectionRange(0, temporaryTextarea.value.length);
+
+        const copied = document.execCommand('copy');
+        temporaryTextarea.remove();
+        if (!copied) {
+            throw new Error('document.execCommand copy failed');
+        }
+    }
+
+    function setStatus(message, type) {
+        statusMessage.textContent = message;
+        statusMessage.className = 'status-message' + (type ? ' ' + type : '');
+    }
+
+    function showToast(message) {
+        const toast = document.getElementById('toast');
+        window.clearTimeout(toastTimer);
+        toast.textContent = message;
+        toast.classList.add('show');
+        toastTimer = window.setTimeout(function() {
+            toast.classList.remove('show');
+        }, 2600);
+    }
+
+    function showRules() {
+        ruleModal.classList.add('open');
+        document.getElementById('closeRulesButton').focus();
+    }
+
+    function closeRules() {
+        ruleModal.classList.remove('open');
+        document.getElementById('rulesButton').focus();
+    }
+</script>
+
+</body>
+</html>

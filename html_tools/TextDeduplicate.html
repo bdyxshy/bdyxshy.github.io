@@ -1,15 +1,9 @@
-<!-- 
-现代化质感：采用了更柔和的背景色、圆角设计（Border-Radius）和轻量级阴影（Box-Shadow），整体看起来更像一个精致的现代 Web 应用。
-
-内嵌 SVG 图标：没有引入外部图片或图标库，直接使用代码绘制了纯净的“说明”和“复制”图标，保证单文件的独立性。
- -->
-
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>文本对比合并工具</title>
+    <title>文本去重工具</title>
     <style>
         :root {
             --primary-color: #2563eb;
@@ -52,8 +46,6 @@
             font-weight: 600;
             letter-spacing: 0;
         }
-        
-        /* 纯图标按钮统一样式 */
         .icon-btn {
             background: transparent;
             border: none;
@@ -73,18 +65,14 @@
         .info-btn {
             margin-left: 10px;
         }
-
         .input-area {
             display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        .input-box {
-            flex: 1;
-            display: flex;
             flex-direction: column;
+            margin-bottom: 18px;
         }
-        .input-box label {
+        .input-area label,
+        .result-area label,
+        .duplicate-area label {
             font-size: 14px;
             font-weight: 600;
             color: var(--text-muted);
@@ -92,45 +80,58 @@
         }
         textarea {
             width: 100%;
-            height: 220px;
+            height: 250px;
             padding: 15px;
             border: 1px solid var(--border-color);
             border-radius: 8px;
             resize: vertical;
             font-size: 14px;
             box-sizing: border-box;
-            font-family: "Fira Code", monospace;
+            font-family: "Fira Code", Consolas, monospace;
             background-color: var(--surface-soft);
             transition: border-color 0.3s;
+            line-height: 1.55;
         }
         textarea:focus {
             outline: none;
             border-color: var(--primary-color);
             background-color: #fff;
         }
-        
         .action-area {
-            text-align: center;
-            margin-bottom: 25px;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 22px;
+            flex-wrap: wrap;
+        }
+        .execute-btn,
+        .secondary-btn {
+            border: none;
+            padding: 12px 26px;
+            font-size: 15px;
+            font-weight: 500;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
         .execute-btn {
             background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
             color: white;
-            border: none;
-            padding: 12px 32px;
-            font-size: 16px;
-            font-weight: 500;
-            border-radius: 8px;
-            cursor: pointer;
             box-shadow: 0 12px 24px -18px rgba(37, 99, 235, 0.8);
-            transition: all 0.2s ease;
         }
         .execute-btn:hover {
             background: linear-gradient(135deg, var(--primary-hover), #115e59);
             transform: translateY(-1px);
             box-shadow: 0 16px 30px -20px rgba(37, 99, 235, 0.9);
         }
-
+        .secondary-btn {
+            background: #eef2f7;
+            color: #475569;
+        }
+        .secondary-btn:hover {
+            background: #e2e8f0;
+            color: #1f2937;
+        }
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -156,25 +157,22 @@
             font-size: 13px;
             color: var(--text-muted);
         }
-
-        .result-area {
+        .output-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 20px;
+        }
+        .result-area,
+        .duplicate-area {
             display: flex;
             flex-direction: column;
+            min-width: 0;
         }
-        .result-area label {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-muted);
-            margin-bottom: 8px;
-        }
-        
-        /* 结果框的外层容器，用于定位复制图标 */
         .result-wrapper {
             position: relative;
             width: 100%;
+            min-width: 0;
         }
-        
-        /* 右上角悬浮的复制按钮 */
         .copy-btn {
             position: absolute;
             top: 12px;
@@ -187,28 +185,34 @@
             background-color: #f8fafc;
             color: var(--primary-color);
         }
-
-        #resultBox {
+        #resultBox,
+        #duplicateBox {
             width: 100%;
-            min-height: 250px;
+            min-height: 260px;
+            max-height: 520px;
             padding: 20px;
-            padding-right: 54px;
             border: 1px solid var(--border-color);
             border-radius: 8px;
             background-color: var(--surface-soft);
             font-size: 14px;
-            font-family: "Fira Code", monospace;
-            overflow-y: auto;
+            font-family: "Fira Code", Consolas, monospace;
+            white-space: normal;
+            overflow: auto;
             box-sizing: border-box;
-            line-height: 1.6;
+            line-height: 1.45;
         }
-        .numbered-line {
+        #resultBox {
+            padding-right: 54px;
+        }
+        .line-row {
             display: grid;
             grid-template-columns: 44px minmax(0, 1fr);
-            gap: 10px;
+            gap: 8px;
             align-items: start;
-            min-height: 24px;
-            margin: 3px 0;
+            padding: 1px 8px;
+            margin: 1px 0;
+            border-radius: 6px;
+            border-left: 4px solid transparent;
         }
         .line-number {
             color: #94a3b8;
@@ -223,26 +227,19 @@
             white-space: pre-wrap;
             overflow-wrap: anywhere;
         }
-        
-        /* 高亮样式优化 */
-        .highlight-red {
+        .line-unique {
+            background-color: #ecfdf5;
+            color: #166534;
+            border-left-color: #22c55e;
+        }
+        .line-duplicate {
             background-color: #fee2e2;
             color: #b91c1c;
-            border-radius: 4px;
-            padding: 2px 4px;
-            margin: 0 2px;
+            border-left-color: #ef4444;
         }
-        .highlight-green {
-            background-color: #dcfce7;
-            color: #15803d;
-            display: block;
-            padding: 4px 8px;
-            margin: 4px 0;
-            border-radius: 6px;
-            border-left: 4px solid #22c55e;
+        .empty-state {
+            color: var(--text-muted);
         }
-
-        /* 提示信息 */
         #toast {
             visibility: hidden;
             min-width: 200px;
@@ -265,8 +262,6 @@
             opacity: 1;
             transform: translateX(-50%) translateY(0);
         }
-
-        /* 弹窗遮罩层 */
         .modal {
             display: none;
             position: fixed;
@@ -278,7 +273,6 @@
             background-color: rgba(15, 23, 42, 0.4);
             backdrop-filter: blur(4px);
         }
-        /* 弹窗内容 */
         .modal-content {
             background-color: #fff;
             margin: 8% auto;
@@ -311,6 +305,12 @@
         .modal-content li {
             margin-bottom: 10px;
         }
+        @media (max-width: 900px) {
+            .output-grid,
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
         @media (max-width: 760px) {
             body {
                 padding: 18px 12px;
@@ -318,14 +318,13 @@
             .container {
                 padding: 20px;
             }
-            .input-area {
-                flex-direction: column;
-            }
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
             textarea {
-                height: 190px;
+                height: 210px;
+            }
+            .modal-content {
+                width: auto;
+                margin: 18% 16px;
+                padding: 26px 28px;
             }
         }
     </style>
@@ -334,8 +333,7 @@
 
 <div class="container">
     <div class="header-area">
-        <h2>文本对比合并工具</h2>
-        <!-- 纯 Icon 的说明按钮 (使用 SVG) -->
+        <h2>文本去重工具</h2>
         <button class="icon-btn info-btn" onclick="showRules()" title="运行规则说明">
             <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10"></circle>
@@ -344,83 +342,80 @@
             </svg>
         </button>
     </div>
-    
+
     <div class="input-area">
-        <div class="input-box">
-            <label for="oldData">旧数据 (Old Data)</label>
-            <textarea id="oldData" placeholder="在此粘贴旧数据..."></textarea>
-        </div>
-        <div class="input-box">
-            <label for="newData">新数据 (New Data)</label>
-            <textarea id="newData" placeholder="在此粘贴新数据..."></textarea>
-        </div>
+        <label for="sourceData">原始数据 (Raw Data)</label>
+        <textarea id="sourceData" placeholder="在此粘贴待去重文本，每行一条数据..."></textarea>
     </div>
 
     <div class="action-area">
-        <button class="execute-btn" onclick="compareAndMerge()">执行对比并合并</button>
+        <button class="execute-btn" onclick="deduplicateText()">执行去重</button>
+        <button class="secondary-btn" onclick="clearAll()">清空</button>
     </div>
 
-    <div class="stats-grid" aria-label="对比合并统计">
+    <div class="stats-grid" aria-label="去重统计">
         <div class="stat-card">
-            <span class="stat-value" id="oldLineCount">0</span>
-            <span class="stat-label">旧数据行数</span>
+            <span class="stat-value" id="totalCount">0</span>
+            <span class="stat-label">有效行数</span>
         </div>
         <div class="stat-card">
-            <span class="stat-value" id="newLineCount">0</span>
-            <span class="stat-label">新数据行数</span>
+            <span class="stat-value" id="uniqueCount">0</span>
+            <span class="stat-label">去重后行数</span>
         </div>
         <div class="stat-card">
-            <span class="stat-value" id="matchedLineCount">0</span>
-            <span class="stat-label">命中新数据</span>
+            <span class="stat-value" id="duplicateCount">0</span>
+            <span class="stat-label">重复行数</span>
         </div>
         <div class="stat-card">
-            <span class="stat-value" id="appendedLineCount">0</span>
-            <span class="stat-label">追加行数</span>
+            <span class="stat-value" id="groupCount">0</span>
+            <span class="stat-label">重复项种类</span>
         </div>
     </div>
 
-    <div class="result-area">
-        <label>合并结果预览</label>
-        <!-- 带有相对定位的外层，让复制按钮悬浮在右上角 -->
-        <div class="result-wrapper">
-            <!-- 纯 Icon 的复制按钮 (使用 SVG) -->
-            <button class="icon-btn copy-btn" onclick="copyResult()" title="一键复制纯文本">
-                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                </svg>
-            </button>
-            <div id="resultBox"></div>
+    <div class="output-grid">
+        <div class="result-area">
+            <label>去重结果预览</label>
+            <div class="result-wrapper">
+                <button class="icon-btn copy-btn" onclick="copyResult()" title="一键复制去重结果">
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                </button>
+                <div id="resultBox"><span class="empty-state">去重结果会显示在这里。</span></div>
+            </div>
+        </div>
+
+        <div class="duplicate-area">
+            <label>重复数据高亮预览</label>
+            <div id="duplicateBox"><span class="empty-state">重复行会以红色高亮显示。</span></div>
         </div>
     </div>
 </div>
 
-<div id="toast">✅ 结果已复制到剪贴板！</div>
+<div id="toast">结果已复制到剪贴板！</div>
 
-<!-- 规则说明弹窗 -->
 <div id="ruleModal" class="modal">
     <div class="modal-content">
-        <!-- 弹窗关闭 Icon -->
         <svg class="close-btn" onclick="closeRules()" viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
         </svg>
-        <h3 style="margin-top: 0; color: var(--text-main);">⚙️ 运行规则说明</h3>
+        <h3 style="margin-top: 0; color: var(--text-main);">运行规则说明</h3>
         <ul>
-            <li><strong>空行处理：</strong>自动忽略新旧数据中为空白的行。</li>
-            <li><strong>部分高亮（红）：</strong>将新数据行与旧数据逐行对比。若旧数据包含新数据，则将其包含的关键词部分标记为<span class="highlight-red">红色背景</span>。</li>
-            <li><strong>末尾追加（绿）：</strong>若新数据中的某一行在所有旧数据中都<strong>未找到匹配项</strong>，则将其插入到结果页最末尾，并标记为<span class="highlight-green" style="display:inline; border-left:none; padding:2px 4px;">绿色背景</span>。</li>
-            <li><strong>统计数据：</strong>展示旧数据行数、新数据行数、命中的新数据行数，以及最终追加到末尾的新数据行数。</li>
+            <li><strong>去重单位：</strong>以每一行作为一条完整数据进行去重。</li>
+            <li><strong>空行处理：</strong>自动忽略空白行，省得空行混进结果里捣乱。</li>
+            <li><strong>空格处理：</strong>去掉每行首尾空格后参与比较，输出也使用清理后的文本。</li>
+            <li><strong>保留规则：</strong>保留首次出现的数据，后续重复行会在高亮预览中标记为红色。</li>
             <li><strong>行号展示：</strong>结果预览左侧显示行号，复制结果时不会带上行号。</li>
-            <li><strong>结果输出：</strong>结果页以旧数据为主合并。点击右上角的“复制图标”可获得不带颜色的纯净文本。</li>
+            <li><strong>结果复制：</strong>点击右上角复制图标，可复制不带颜色的纯文本去重结果。</li>
         </ul>
     </div>
 </div>
 
 <script>
-    let mergedResultText = "";
+    let deduplicatedText = "";
 
-    // HTML特殊字符转义
     function escapeHtml(text) {
         const map = {
             '&': '&amp;',
@@ -432,109 +427,82 @@
         return text.replace(/[&<>"']/g, function(m) { return map[m]; });
     }
 
-    function compareAndMerge() {
-        const oldText = document.getElementById('oldData').value;
-        const newText = document.getElementById('newData').value;
+    function deduplicateText() {
+        const sourceText = document.getElementById('sourceData').value;
+        const lines = sourceText.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
+        const seenLines = new Set();
+        const duplicateGroups = new Set();
+        const uniqueLines = [];
+        let resultRowsHtml = "";
+        let duplicateRowsHtml = "";
+        let duplicateCount = 0;
 
-        const oldLines = oldText.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
-        const newLines = newText.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            const escapedLine = escapeHtml(line);
 
-        let resultHtml = "";
-        let resultLines = [];
-        let matchedNewLinesIndex = new Set();
-        let appendedCount = 0;
-        let lineNumber = 1;
-
-        for (let i = 0; i < oldLines.length; i++) {
-            let currentOldLine = oldLines[i];
-            let intervals = [];
-
-            for (let j = 0; j < newLines.length; j++) {
-                let newLine = newLines[j];
-                let startIndex = 0;
-                while ((startIndex = currentOldLine.indexOf(newLine, startIndex)) > -1) {
-                    intervals.push([startIndex, startIndex + newLine.length]);
-                    matchedNewLinesIndex.add(j); 
-                    startIndex += newLine.length;
-                }
+            if (seenLines.has(line)) {
+                duplicateCount++;
+                duplicateGroups.add(line);
+                duplicateRowsHtml += renderNumberedLine(i + 1, escapedLine, 'line-duplicate');
+                continue;
             }
 
-            intervals.sort((a, b) => a[0] - b[0]);
-            let mergedIntervals = [];
-            if (intervals.length > 0) {
-                let currentInterval = intervals[0];
-                for (let k = 1; k < intervals.length; k++) {
-                    if (intervals[k][0] <= currentInterval[1]) {
-                        currentInterval[1] = Math.max(currentInterval[1], intervals[k][1]);
-                    } else {
-                        mergedIntervals.push(currentInterval);
-                        currentInterval = intervals[k];
-                    }
-                }
-                mergedIntervals.push(currentInterval);
-            }
-
-            let htmlLine = "";
-            let lastIdx = 0;
-            for (let m = 0; m < mergedIntervals.length; m++) {
-                let start = mergedIntervals[m][0];
-                let end = mergedIntervals[m][1];
-                
-                htmlLine += escapeHtml(currentOldLine.substring(lastIdx, start));
-                htmlLine += `<span class="highlight-red">${escapeHtml(currentOldLine.substring(start, end))}</span>`;
-                lastIdx = end;
-            }
-            htmlLine += escapeHtml(currentOldLine.substring(lastIdx));
-
-            resultLines.push(currentOldLine);
-            resultHtml += renderNumberedLine(lineNumber, htmlLine);
-            lineNumber++;
+            seenLines.add(line);
+            uniqueLines.push(line);
+            resultRowsHtml += renderNumberedLine(uniqueLines.length, escapedLine, '');
+            duplicateRowsHtml += renderNumberedLine(i + 1, escapedLine, 'line-unique');
         }
 
-        for (let j = 0; j < newLines.length; j++) {
-            if (!matchedNewLinesIndex.has(j)) {
-                let newLine = newLines[j];
-                resultLines.push(newLine);
-                resultHtml += renderNumberedLine(lineNumber, `<span class="highlight-green">${escapeHtml(newLine)}</span>`);
-                lineNumber++;
-                appendedCount++;
-            }
+        deduplicatedText = uniqueLines.join('\n');
+        document.getElementById('resultBox').innerHTML = resultRowsHtml;
+        document.getElementById('duplicateBox').innerHTML = duplicateRowsHtml || '<span class="empty-state">暂无有效数据。</span>';
+        document.getElementById('totalCount').innerText = lines.length;
+        document.getElementById('uniqueCount').innerText = uniqueLines.length;
+        document.getElementById('duplicateCount').innerText = duplicateCount;
+        document.getElementById('groupCount').innerText = duplicateGroups.size;
+
+        if (!lines.length) {
+            document.getElementById('resultBox').innerHTML = '<span class="empty-state">去重结果会显示在这里。</span>';
+            showToast("没有可处理的数据");
+            return;
         }
 
-        mergedResultText = resultLines.join('\n');
-        document.getElementById('resultBox').innerHTML = resultHtml;
-        updateStats(oldLines.length, newLines.length, matchedNewLinesIndex.size, appendedCount);
+        showToast(`去重完成：移除 ${duplicateCount} 行重复数据`);
     }
 
-    function renderNumberedLine(lineNumber, lineHtml) {
+    function renderNumberedLine(lineNumber, lineHtml, rowClass) {
+        const extraClass = rowClass ? ` ${rowClass}` : '';
         return `
-            <div class="numbered-line">
+            <div class="line-row${extraClass}">
                 <span class="line-number" aria-hidden="true">${lineNumber}</span>
                 <span class="line-content">${lineHtml}</span>
             </div>
         `;
     }
 
-    function updateStats(oldLineCount, newLineCount, matchedLineCount, appendedLineCount) {
-        document.getElementById('oldLineCount').innerText = oldLineCount;
-        document.getElementById('newLineCount').innerText = newLineCount;
-        document.getElementById('matchedLineCount').innerText = matchedLineCount;
-        document.getElementById('appendedLineCount').innerText = appendedLineCount;
+    function clearAll() {
+        document.getElementById('sourceData').value = "";
+        document.getElementById('resultBox').innerHTML = '<span class="empty-state">去重结果会显示在这里。</span>';
+        document.getElementById('duplicateBox').innerHTML = '<span class="empty-state">重复行会以红色高亮显示。</span>';
+        document.getElementById('totalCount').innerText = "0";
+        document.getElementById('uniqueCount').innerText = "0";
+        document.getElementById('duplicateCount').innerText = "0";
+        document.getElementById('groupCount').innerText = "0";
+        deduplicatedText = "";
     }
 
     function copyResult() {
-        const textToCopy = mergedResultText;
-
-        if (!textToCopy.trim()) {
-            showToast("⚠️ 结果为空，无需复制");
+        if (!deduplicatedText.trim()) {
+            showToast("结果为空，无需复制");
             return;
         }
 
-        navigator.clipboard.writeText(textToCopy).then(() => {
-            showToast("✅ 结果已复制到剪贴板！");
+        navigator.clipboard.writeText(deduplicatedText).then(() => {
+            showToast("结果已复制到剪贴板！");
         }).catch(err => {
             console.error('复制失败:', err);
-            showToast("❌ 复制失败，请手动框选复制");
+            showToast("复制失败，请手动框选复制");
         });
     }
 
@@ -545,7 +513,6 @@
         setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
     }
 
-    // === 弹窗控制逻辑 ===
     function showRules() {
         document.getElementById('ruleModal').style.display = 'block';
     }
@@ -554,7 +521,6 @@
         document.getElementById('ruleModal').style.display = 'none';
     }
 
-    // 点击弹窗外部（灰色遮罩层）时自动关闭弹窗
     window.onclick = function(event) {
         const modal = document.getElementById('ruleModal');
         if (event.target === modal) {

@@ -120,68 +120,205 @@
         /* === 右侧主内容区 === */
         .main-content {
             flex: 1;
+            min-width: 0;
             display: flex;
             flex-direction: column;
             position: relative;
         }
         .top-bar {
-            height: 60px;
-            background-color: var(--panel-bg);
-            border-bottom: 1px solid var(--border-color);
+            height: 56px;
+            background-color: #f3f4f6;
+            border-bottom: 1px solid #e9edf3;
             display: flex;
             align-items: center;
-            gap: 14px;
-            padding: 0 18px;
-            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+            gap: 10px;
+            padding: 0 16px;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 4px 14px rgba(15, 23, 42, 0.035);
             z-index: 5;
-            backdrop-filter: blur(14px);
         }
         .sidebar-toggle {
             width: 36px;
             height: 36px;
             border: 1px solid var(--border-color);
-            border-radius: 8px;
+            border-radius: 6px;
             background: #fff;
             color: #52525b;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s ease;
+            transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
         }
         .sidebar-toggle:hover {
             color: #2563eb;
             border-color: #bfdbfe;
-            box-shadow: 0 8px 18px rgba(37, 99, 235, 0.12);
+            box-shadow: 0 6px 14px rgba(37, 99, 235, 0.08);
         }
-        .current-tool-title {
-            font-size: 18px;
+        .tab-strip {
+            flex: 1;
+            min-width: 0;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scrollbar-width: thin;
+            padding: 0 2px;
+        }
+        .tab-strip::-webkit-scrollbar {
+            height: 6px;
+        }
+        .tab-strip::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 999px;
+        }
+        .tab-item {
+            flex: 0 0 auto;
+            min-width: 96px;
+            max-width: 156px;
+            height: 36px;
+            padding: 0 32px 0 14px;
+            display: flex;
+            align-items: center;
+            border: 1px solid #eef1f5;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.82);
+            color: #8f96a3;
+            cursor: pointer;
+            position: relative;
+            box-shadow: 0 1px 0 rgba(255, 255, 255, 0.92);
+            transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+        }
+        .tab-item:hover {
+            background: #fff;
+            color: #1d4ed8;
+            border-color: #dbeafe;
+            box-shadow: 0 5px 14px rgba(37, 99, 235, 0.06);
+        }
+        .tab-item.active {
+            background: #fff;
+            color: #2563eb;
+            border-color: #eef1f5;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.035);
+            z-index: 2;
+        }
+        .tab-title {
+            display: block;
+            width: 100%;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 14px;
             font-weight: 600;
-            color: #27272a;
+            text-align: center;
+        }
+        .tab-close {
+            width: 24px;
+            height: 24px;
+            border: none;
+            background: transparent;
+            border-radius: 50%;
+            color: #8b93a1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: absolute;
+            right: 6px;
+            top: 50%;
+            transform: translateY(-50%) scale(0.86);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.16s ease, transform 0.16s ease, background 0.16s ease, color 0.16s ease, visibility 0.16s ease;
+        }
+        .tab-item:hover .tab-close,
+        .tab-item.active .tab-close {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: translateY(-50%) scale(1);
+        }
+        .tab-close:hover {
+            background: #f1f5f9;
+            color: #475569;
+        }
+        .tab-actions {
+            position: relative;
+            flex: 0 0 auto;
+        }
+        .tab-actions-menu {
+            position: absolute;
+            right: 0;
+            top: 44px;
+            min-width: 190px;
+            padding: 6px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background: #fff;
+            box-shadow: 0 18px 36px -20px rgba(15, 23, 42, 0.35);
+            display: none;
+            z-index: 20;
+        }
+        .tab-actions-menu.open {
+            display: block;
+        }
+        .tab-actions-menu button {
+            width: 100%;
+            border: none;
+            background: transparent;
+            padding: 10px 12px;
+            border-radius: 8px;
+            color: #334155;
+            text-align: left;
+            cursor: pointer;
+            transition: background 0.18s ease, color 0.18s ease;
+        }
+        .tab-actions-menu button:hover {
+            background: #f8fafc;
+            color: #111827;
         }
         
-        /* iframe 容器 */
-        .iframe-container {
+        /* 工作区 */
+        .workspace {
+            position: relative;
             flex: 1;
+            min-width: 0;
             width: 100%;
             height: 100%;
             background-color: var(--main-bg);
+            overflow: hidden;
         }
-        iframe {
+        .iframe-stack {
+            position: absolute;
+            inset: 0;
+        }
+        .tool-frame {
+            position: absolute;
+            inset: 0;
             width: 100%;
             height: 100%;
             border: none;
+            display: none;
+            background: var(--main-bg);
+        }
+        .tool-frame.active {
             display: block;
         }
 
         /* 欢迎页空状态 */
         #welcomeState {
+            position: absolute;
+            inset: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             height: 100%;
             color: #64748b;
+            z-index: 1;
         }
         #welcomeState svg {
             margin-bottom: 20px;
@@ -203,6 +340,18 @@
             .nav-item {
                 padding: 12px 0;
             }
+            .top-bar {
+                gap: 8px;
+                padding: 0 8px;
+            }
+            .tab-strip {
+                gap: 5px;
+            }
+            .tab-item {
+                min-width: 88px;
+                max-width: 136px;
+                padding: 0 30px 0 10px;
+            }
         }
     </style>
 </head>
@@ -220,17 +369,37 @@
         </div>
         <ul class="nav-list">
             <!-- 菜单项：绑定了 onclick 事件来切换 iframe 路径 -->
-            <li class="nav-item" onclick="switchTool(this, 'TextCompare.html', '文本对比合并')" title="文本对比合并">
+            <li class="nav-item" data-file="TextCompare.html" data-title="文本对比合并" onclick="switchTool(this, 'TextCompare.html', '文本对比合并')" title="文本对比合并">
                 <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                 <span class="nav-label">文本对比合并</span>
             </li>
+
+            <li class="nav-item" data-file="TextDeduplicate.html" data-title="文本去重" onclick="switchTool(this, 'TextDeduplicate.html', '文本去重')" title="文本去重">
+                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"></path><path d="M4 12h10"></path><path d="M4 17h8"></path><path d="M17 13l3 3 3-3"></path><path d="M20 6v10"></path></svg>
+                <span class="nav-label">文本去重</span>
+            </li>
+
+            <li class="nav-item" data-file="TextClassifier.html" data-title="文本分类" onclick="switchTool(this, 'TextClassifier.html', '文本分类')" title="文本分类">
+                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h8"></path><path d="M4 12h8"></path><path d="M4 18h8"></path><path d="M16 5l4 4-4 4"></path><path d="M20 9v7a3 3 0 0 1-3 3h-1"></path></svg>
+                <span class="nav-label">文本分类</span>
+            </li>
+
+            <li class="nav-item" data-file="TextMerge.html" data-title="文本合并" onclick="switchTool(this, 'TextMerge.html', '文本合并')" title="文本合并">
+                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h6"></path><path d="M4 12h6"></path><path d="M4 18h6"></path><path d="M14 6h6"></path><path d="M14 12h6"></path><path d="M14 18h6"></path></svg>
+                <span class="nav-label">文本合并</span>
+            </li>
+
+            <li class="nav-item" data-file="TextSort.html" data-title="文本排序" onclick="switchTool(this, 'TextSort.html', '文本排序')" title="文本排序">
+                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h11"></path><path d="M3 12h8"></path><path d="M3 18h5"></path><path d="m16 15 3 3 3-3"></path><path d="M19 5v13"></path></svg>
+                <span class="nav-label">文本排序</span>
+            </li>
             
-            <li class="nav-item" onclick="switchTool(this, 'UrlBatchOpener.html', '网址批量打开')" title="网址批量打开">
+            <li class="nav-item" data-file="UrlBatchOpener.html" data-title="网址批量打开" onclick="switchTool(this, 'UrlBatchOpener.html', '网址批量打开')" title="网址批量打开">
                 <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
                 <span class="nav-label">网址批量打开</span>
             </li>
 
-            <li class="nav-item" onclick="switchTool(this, 'JsonFormatter.html', 'JSON格式化提取')" title="JSON格式化提取">
+            <li class="nav-item" data-file="JsonFormatter.html" data-title="JSON格式化提取" onclick="switchTool(this, 'JsonFormatter.html', 'JSON格式化提取')" title="JSON格式化提取">
                 <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline><line x1="13" y1="4" x2="11" y2="20"></line></svg>
                 <span class="nav-label">JSON格式化提取</span>
             </li>
@@ -249,10 +418,26 @@
                     <line x1="3" y1="18" x2="21" y2="18"></line>
                 </svg>
             </button>
-            <span class="current-tool-title" id="topTitle">欢迎使用</span>
+            <div class="tab-strip" id="tabStrip" aria-label="已打开标签页"></div>
+            <div class="tab-actions">
+                <button class="sidebar-toggle" id="tabActionsBtn" title="标签管理" aria-label="标签管理">
+                    <svg viewBox="0 0 24 24" width="19" height="19" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="5" cy="12" r="1.5"></circle>
+                        <circle cx="12" cy="12" r="1.5"></circle>
+                        <circle cx="19" cy="12" r="1.5"></circle>
+                    </svg>
+                </button>
+                <div class="tab-actions-menu" id="tabActionsMenu">
+                    <button type="button" data-action="close-current">关闭当前标签</button>
+                    <button type="button" data-action="close-others">关闭其他标签</button>
+                    <button type="button" data-action="close-left">关闭左侧标签</button>
+                    <button type="button" data-action="close-right">关闭右侧标签</button>
+                    <button type="button" data-action="close-all">关闭全部标签</button>
+                </div>
+            </div>
         </div>
         
-        <div class="iframe-container">
+        <div class="workspace">
             <!-- 初始状态显示欢迎画面 -->
             <div id="welcomeState">
                 <svg viewBox="0 0 24 24" width="80" height="80" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -263,34 +448,214 @@
                 <h2>请从左侧选择一个工具开始</h2>
             </div>
             
-            <!-- iframe 用于加载实际的工具页面，默认隐藏 -->
-            <iframe id="toolFrame" style="display: none;"></iframe>
+            <!-- iframe 容器：每个工具一个独立实例，切换时只隐藏/显示 -->
+            <div class="iframe-stack" id="iframeStack"></div>
         </div>
     </div>
 
     <script>
+        const openedTabs = [];
+        let activeTabId = null;
+        let tabSeed = 0;
+
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             sidebar.classList.toggle('collapsed');
         }
 
         function switchTool(element, fileUrl, toolName) {
-            // 1. 更新侧边栏高亮状态
-            const items = document.querySelectorAll('.nav-item');
-            items.forEach(item => item.classList.remove('active'));
-            element.classList.add('active');
-
-            // 2. 更新顶部标题
-            document.getElementById('topTitle').innerText = toolName;
-
-            // 3. 隐藏欢迎页面，显示并加载 iframe
-            const welcomeState = document.getElementById('welcomeState');
-            const toolFrame = document.getElementById('toolFrame');
-            
-            welcomeState.style.display = 'none';
-            toolFrame.style.display = 'block';
-            toolFrame.src = fileUrl; // 加载对应的 HTML 文件
+            const existing = openedTabs.find(tab => tab.fileUrl === fileUrl);
+            if (existing) {
+                activateTab(existing.id);
+            } else {
+                createTab(fileUrl, toolName);
+            }
+            updateSidebarActive(fileUrl);
+            closeTabMenu();
         }
+
+        function escapeHtml(text) {
+            return String(text)
+                .split('&').join('&amp;')
+                .split('<').join('&lt;')
+                .split('>').join('&gt;')
+                .split('"').join('&quot;')
+                .split("'").join('&#39;');
+        }
+
+        function createTab(fileUrl, toolName) {
+            const tabId = `tab-${++tabSeed}`;
+            const tabStrip = document.getElementById('tabStrip');
+            const iframeStack = document.getElementById('iframeStack');
+
+            const tabEl = document.createElement('div');
+            tabEl.className = 'tab-item';
+            tabEl.dataset.tabId = tabId;
+            tabEl.dataset.file = fileUrl;
+            tabEl.setAttribute('role', 'tab');
+            tabEl.setAttribute('tabindex', '0');
+            tabEl.innerHTML = `
+                <span class="tab-title">${escapeHtml(toolName)}</span>
+                <button type="button" class="tab-close" aria-label="关闭 ${escapeHtml(toolName)} 标签">
+                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            `;
+
+            const iframeEl = document.createElement('iframe');
+            iframeEl.className = 'tool-frame';
+            iframeEl.dataset.tabId = tabId;
+            iframeEl.src = fileUrl;
+
+            tabEl.addEventListener('click', (event) => {
+                if (event.target.closest('.tab-close')) return;
+                activateTab(tabId);
+            });
+            tabEl.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    activateTab(tabId);
+                }
+            });
+            tabEl.querySelector('.tab-close').addEventListener('click', (event) => {
+                event.stopPropagation();
+                closeTabsByIds([tabId]);
+            });
+
+            tabStrip.appendChild(tabEl);
+            iframeStack.appendChild(iframeEl);
+            openedTabs.push({ id: tabId, fileUrl, toolName, tabEl, iframeEl });
+            activateTab(tabId);
+            return tabId;
+        }
+
+        function getActiveTab() {
+            return openedTabs.find(tab => tab.id === activeTabId) || null;
+        }
+
+        function updateSidebarActive(fileUrl) {
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.toggle('active', Boolean(fileUrl) && item.dataset.file === fileUrl);
+            });
+        }
+
+        function updateWelcomeState() {
+            document.getElementById('welcomeState').style.display = openedTabs.length ? 'none' : 'flex';
+        }
+
+        function activateTab(tabId) {
+            const tab = openedTabs.find(item => item.id === tabId);
+            if (!tab) return;
+
+            activeTabId = tabId;
+            openedTabs.forEach(item => {
+                const isActive = item.id === tabId;
+                item.tabEl.classList.toggle('active', isActive);
+                item.iframeEl.classList.toggle('active', isActive);
+                item.iframeEl.style.display = isActive ? 'block' : 'none';
+            });
+
+            updateSidebarActive(tab.fileUrl);
+            updateWelcomeState();
+            tab.tabEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+
+        function closeTabsByIds(tabIds) {
+            if (!tabIds.length) return;
+
+            const tabIdSet = new Set(tabIds);
+            const activeBefore = activeTabId;
+            const activeIndexBefore = openedTabs.findIndex(tab => tab.id === activeBefore);
+
+            for (let i = openedTabs.length - 1; i >= 0; i--) {
+                const tab = openedTabs[i];
+                if (!tabIdSet.has(tab.id)) continue;
+                tab.tabEl.remove();
+                tab.iframeEl.remove();
+                openedTabs.splice(i, 1);
+            }
+
+            if (!openedTabs.length) {
+                activeTabId = null;
+                updateSidebarActive(null);
+                updateWelcomeState();
+                closeTabMenu();
+                return;
+            }
+
+            if (tabIdSet.has(activeBefore) || !openedTabs.some(tab => tab.id === activeBefore)) {
+                const fallbackIndex = Math.min(Math.max(activeIndexBefore, 0), openedTabs.length - 1);
+                activateTab(openedTabs[fallbackIndex].id);
+            } else {
+                const activeTab = getActiveTab();
+                if (activeTab) {
+                    updateSidebarActive(activeTab.fileUrl);
+                }
+                updateWelcomeState();
+            }
+
+            closeTabMenu();
+        }
+
+        function closeCurrentTab() {
+            if (!activeTabId) return;
+            closeTabsByIds([activeTabId]);
+        }
+
+        function closeOtherTabs() {
+            if (!activeTabId) return;
+            closeTabsByIds(openedTabs.filter(tab => tab.id !== activeTabId).map(tab => tab.id));
+        }
+
+        function closeLeftTabs() {
+            if (!activeTabId) return;
+            const activeIndex = openedTabs.findIndex(tab => tab.id === activeTabId);
+            if (activeIndex <= 0) return;
+            closeTabsByIds(openedTabs.slice(0, activeIndex).map(tab => tab.id));
+        }
+
+        function closeRightTabs() {
+            if (!activeTabId) return;
+            const activeIndex = openedTabs.findIndex(tab => tab.id === activeTabId);
+            if (activeIndex < 0 || activeIndex >= openedTabs.length - 1) return;
+            closeTabsByIds(openedTabs.slice(activeIndex + 1).map(tab => tab.id));
+        }
+
+        function closeAllTabs() {
+            closeTabsByIds(openedTabs.map(tab => tab.id));
+        }
+
+        function closeTabMenu() {
+            document.getElementById('tabActionsMenu').classList.remove('open');
+        }
+
+        document.getElementById('tabActionsBtn').addEventListener('click', (event) => {
+            event.stopPropagation();
+            const menu = document.getElementById('tabActionsMenu');
+            menu.classList.toggle('open');
+        });
+
+        document.getElementById('tabActionsMenu').addEventListener('click', (event) => {
+            const actionButton = event.target.closest('button[data-action]');
+            if (!actionButton) return;
+
+            const action = actionButton.dataset.action;
+            if (action === 'close-current') closeCurrentTab();
+            if (action === 'close-others') closeOtherTabs();
+            if (action === 'close-left') closeLeftTabs();
+            if (action === 'close-right') closeRightTabs();
+            if (action === 'close-all') closeAllTabs();
+            closeTabMenu();
+        });
+
+        document.addEventListener('click', (event) => {
+            if (event.target.closest('.tab-actions')) return;
+            closeTabMenu();
+        });
+
+        updateWelcomeState();
     </script>
 </body>
 </html>

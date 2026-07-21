@@ -1,0 +1,24 @@
+# PyCharm
+.idea/
+*.iml
+*.csv
+*.txt
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# MacOS
+.DS_Store
+
+# Windows
+Thumbs.db
+/myenv/
+
+# Logs
+*.log
+202*/
+
+*/build/
+*/dist/
